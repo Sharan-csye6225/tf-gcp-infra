@@ -6,7 +6,7 @@ provider "google" {
 }
 
 # Create Virtual Private Cloud (VPC)
-resource "google_compute_network" "my_vpc_test" {
+resource "google_compute_network" "my_vpc" {
   name                            = var.vpc_name
   auto_create_subnetworks         = var.auto_create_subnetworks
   routing_mode                    = var.routing_mode
@@ -16,7 +16,7 @@ resource "google_compute_network" "my_vpc_test" {
 # Create Route Table
 resource "google_compute_route" "webapp_route" {
   name             = "${var.vpc_name}-route-table"
-  network          = google_compute_network.my_vpc_test.self_link
+  network          = google_compute_network.my_vpc.self_link
   dest_range       = var.dest_range
   next_hop_gateway = var.next_hop_gateway
   priority         = 1000
@@ -29,6 +29,5 @@ resource "google_compute_subnetwork" "subnet" {
 
   name          = "${var.vpc_name}-${each.key}"
   ip_cidr_range = each.value
-  network       = google_compute_network.my_vpc_test.self_link
+  network       = google_compute_network.my_vpc.self_link
 }
-
