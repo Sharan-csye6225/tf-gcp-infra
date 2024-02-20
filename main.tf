@@ -11,7 +11,7 @@ resource "google_compute_network" "my_vpc_test" {
   auto_create_subnetworks         = var.auto_create_subnetworks
   routing_mode                    = var.routing_mode
   delete_default_routes_on_create = var.delete_default_routes_on_create
-}
+
 
 # Create Route Table
 resource "google_compute_route" "webapp_route" {
