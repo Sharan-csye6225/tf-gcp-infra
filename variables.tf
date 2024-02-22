@@ -88,17 +88,17 @@ variable "firewall_description" {
   type        = string
 }
 
-variable "custom-image-name" {
+variable "custom_image_name" {
   description = "Description for the Firewall "
   type        = string
 }
 
-variable "firewall-allow-priority" {
+variable "firewall_allow_priority" {
   description = "Description for the Firewall rule priority "
   type        = number
 }
 
-variable "firewall-deny-priority" {
+variable "firewall_deny_priority" {
   description = "Description for the Firewall rule priority "
   type        = number
 }

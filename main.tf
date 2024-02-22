@@ -43,7 +43,7 @@ resource "google_compute_firewall" "firewall_deny" {
     ports    = var.firewall_deny_port
   }
 
-  priority      = var.firewall-deny-priority
+  priority      = var.firewall_deny_priority
   source_ranges = var.source_ranges
   target_tags   = var.target_tags
 }
@@ -59,7 +59,7 @@ resource "google_compute_firewall" "firewall_allow" {
     ports    = var.firewall_allow_port
   }
 
-  priority      = var.firewall-allow-priority
+  priority      = var.firewall_allow_priority
   source_ranges = var.source_ranges
   target_tags   = var.target_tags
 }
@@ -83,7 +83,7 @@ resource "google_compute_instance" "my_vm_instance" {
   boot_disk {
     auto_delete = var.boot_disk_auto_delete
     initialize_params {
-      image = var.custom-image-name
+      image = var.custom_image_name
       size  = var.boot_disk_size
       type  = var.boot_disk_type
     }
