@@ -64,6 +64,72 @@ resource "google_compute_firewall" "firewall_allow" {
   target_tags   = var.target_tags
 }
 
+resource "random_id" "db_name_suffix" {
+  byte_length = var.db_name_suffix_byte_length
+}
+
+resource "google_compute_global_address" "private_ip_address" {
+  name          = var.private_ip_address_name
+  purpose       = var.purpose
+  address_type  = var.address_type
+  prefix_length = var.prefix_length
+  network       = google_compute_network.my_vpc.id
+}
+
+resource "google_service_networking_connection" "private_network_connection" {
+  network                 = google_compute_network.my_vpc.id
+  service                 = var.private_network_connection_service
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+}
+
+resource "google_sql_database_instance" "my_db_instance" {
+  name                = "${var.my_db_instance_name}-${random_id.db_name_suffix.hex}"
+  database_version    = var.database_version
+  region              = var.region
+  deletion_protection = var.deletion_protection
+  depends_on          = [google_service_networking_connection.private_network_connection]
+  settings {
+    tier              = var.tier
+    disk_type         = var.disk_type
+    disk_size         = var.disk_size
+    availability_type = var.availability_type
+    disk_autoresize   = var.disk_autoresize
+    edition           = var.edition
+    backup_configuration {
+      enabled            = var.backup_configuration_enabled
+      binary_log_enabled = var.backup_configuration_binary_log_enabled
+    }
+    ip_configuration {
+      ipv4_enabled    = var.ip_configuration_ipv4_enabled
+      private_network = google_compute_network.my_vpc.id
+    }
+  }
+}
+
+resource "random_password" "db_password" {
+  length           = var.db_password_length
+  special          = var.db_password_special
+  override_special = var.db_password_override_special
+}
+
+resource "google_sql_database" "db" {
+  name     = var.db_name
+  instance = google_sql_database_instance.my_db_instance.name
+}
+
+# CloudSQL Database User
+resource "google_sql_user" "db_user" {
+  name     = var.db_user
+  instance = google_sql_database_instance.my_db_instance.name
+  password = random_password.db_password.result
+}
+
+
+# Output the internal IP address of the Cloud SQL instance
+output "cloud_sql_internal_ip" {
+  value = google_sql_database_instance.my_db_instance.private_ip_address
+}
+
 # Create GCP Compute Engine Instance
 resource "google_compute_instance" "my_vm_instance" {
   name         = var.vm_name
@@ -88,4 +154,17 @@ resource "google_compute_instance" "my_vm_instance" {
       type  = var.boot_disk_type
     }
   }
+
+  metadata = {
+    startup-script = <<-EOF
+    echo "Startup script"
+    cd /opt/cloud
+    echo "MYSQL_DB_USERNAME=${google_sql_user.db_user.name}" >> .env
+    echo "MYSQL_DB_PASSWORD=${random_password.db_password.result}" >> .env
+    echo "MYSQL_DB_DATABASE=${google_sql_database.db.name}" >> .env
+    echo "MYSQL_DB_HOST=${google_sql_database_instance.my_db_instance.private_ip_address}" >> .env
+    echo "MYSQL_DB_PORT=${var.cloudSQL_port}" >> .env
+    EOF
+  }
 }
+

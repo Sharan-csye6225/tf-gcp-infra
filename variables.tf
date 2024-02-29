@@ -153,3 +153,122 @@ variable "firewall_allow_name" {
   type        = string
 }
 
+variable "cloudSQL_port" {
+  description = "mySQL cloud port number"
+  type        = number
+}
+
+variable "db_user" {
+  description = "db user for cloudSQL"
+  type        = string
+}
+
+variable "db_name" {
+  description = "db_name"
+  type        = string
+}
+
+variable "private_ip_address_name" {
+  description = "private_ip_address_name"
+  type        = string
+}
+
+variable "purpose" {
+  description = "purpose"
+  type        = string
+}
+
+variable "address_type" {
+  description = "address_type"
+  type        = string
+}
+
+variable "prefix_length" {
+  description = "prefix_length"
+  type        = number
+}
+
+variable "private_network_connection_service" {
+  description = "private_network_connection_service"
+  type        = string
+}
+
+variable "my_db_instance_name" {
+  description = "my_db_instance_name"
+  type        = string
+}
+
+variable "database_version" {
+  description = "database_version"
+  type        = string
+}
+
+variable "deletion_protection" {
+  description = "deletion_protection"
+  type        = bool
+}
+
+variable "tier" {
+  description = "tier"
+  type        = string
+}
+
+variable "disk_type" {
+  description = "disk_type"
+  type        = string
+}
+
+variable "disk_size" {
+  description = "disk_size"
+  type        = number
+}
+
+variable "availability_type" {
+  description = "availability_type"
+  type        = string
+}
+
+variable "disk_autoresize" {
+  description = "disk_autoresize"
+  type        = bool
+}
+
+variable "edition" {
+  description = "edition"
+  type        = string
+}
+
+variable "backup_configuration_enabled" {
+  description = "backup_configuration_enabled"
+  type        = bool
+}
+
+variable "backup_configuration_binary_log_enabled" {
+  description = "backup_configuration_binary_log_enabled"
+  type        = bool
+}
+
+variable "ip_configuration_ipv4_enabled" {
+  description = "ip_configuration_ipv4_enabled"
+  type        = bool
+}
+
+variable "db_password_special" {
+  description = "db_password_special"
+  type        = bool
+}
+
+variable "db_password_length" {
+  description = "db_password_length"
+  type        = number
+}
+
+variable "db_password_override_special" {
+  description = "db_password_override_special"
+  type        = string
+}
+
+variable "db_name_suffix_byte_length" {
+  description = "db_name_suffix_byte_length"
+  type        = number
+}
