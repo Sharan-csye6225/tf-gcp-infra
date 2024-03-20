@@ -136,6 +136,7 @@ resource "google_compute_instance" "my_vm_instance" {
   machine_type = var.machine_type
   zone         = var.zone
   tags         = var.tags
+  depends_on   = [google_service_account.vm_service_account]
 
   network_interface {
     subnetwork = google_compute_subnetwork.subnet["webapp"].self_link
@@ -155,6 +156,11 @@ resource "google_compute_instance" "my_vm_instance" {
     }
   }
 
+  service_account {
+    email  = google_service_account.vm_service_account.email
+    scopes = var.service_account_scope
+  }
+
   metadata = {
     startup-script = <<-EOF
     echo "Startup script"
@@ -164,7 +170,44 @@ resource "google_compute_instance" "my_vm_instance" {
     echo "MYSQL_DB_DATABASE=${google_sql_database.db.name}" >> .env
     echo "MYSQL_DB_HOST=${google_sql_database_instance.my_db_instance.private_ip_address}" >> .env
     echo "MYSQL_DB_PORT=${var.cloudSQL_port}" >> .env
+    echo "LOG_FILE_PATH=${var.log_File_Path}" >> .env
     EOF
   }
 }
 
+output "my_vm_instance_public_ip_address" {
+  value = google_compute_instance.my_vm_instance.network_interface.0.access_config.0.nat_ip
+}
+
+resource "google_dns_record_set" "a_record" {
+  name         = var.domain_name
+  type         = var.a_record_type
+  ttl          = var.a_record_ttl
+  managed_zone = var.a_record_managed_zone
+  rrdatas      = [google_compute_instance.my_vm_instance.network_interface[0].access_config[0].nat_ip]
+}
+
+# Create Service Account
+resource "google_service_account" "vm_service_account" {
+  account_id   = var.sa_account_id
+  display_name = var.sa_display_name
+}
+
+# Bind IAM Roles to Service Account
+resource "google_project_iam_binding" "logging_admin_binding" {
+  project = var.project_id
+  role    = var.logging_admin_binding_role
+
+  members = [
+    "serviceAccount:${google_service_account.vm_service_account.email}"
+  ]
+}
+
+resource "google_project_iam_binding" "monitoring_metric_writer_binding" {
+  project = var.project_id
+  role    = var.monitoring_metric_writer_binding_role
+
+  members = [
+    "serviceAccount:${google_service_account.vm_service_account.email}"
+  ]
+}

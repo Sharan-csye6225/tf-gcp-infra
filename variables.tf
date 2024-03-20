@@ -272,3 +272,54 @@ variable "db_name_suffix_byte_length" {
   description = "db_name_suffix_byte_length"
   type        = number
 }
+
+variable "log_File_Path" {
+  description = "log_File_Path"
+  type        = string
+}
+
+variable "domain_name" {
+  description = "domain_name"
+  type        = string
+}
+
+variable "a_record_type" {
+  description = "a_record_type"
+  type        = string
+}
+
+variable "a_record_ttl" {
+  description = "a_record_ttl"
+  type        = number
+}
+
+variable "a_record_managed_zone" {
+  description = "a_record_managed_zone"
+  type        = string
+}
+
+variable "sa_account_id" {
+  description = "sa_account_id"
+  type        = string
+}
+
+variable "sa_display_name" {
+  description = "sa_display_name"
+  type        = string
+}
+
+variable "logging_admin_binding_role" {
+  description = "logging_admin_binding_role"
+  type        = string
+}
+
+variable "monitoring_metric_writer_binding_role" {
+  description = "monitoring_metric_writer_binding_role"
+  type        = string
+}
+
+variable "service_account_scope" {
+  description = "service_account_scope"
+  type        = list(string)
+}
+
