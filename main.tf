@@ -122,6 +122,7 @@ resource "google_sql_user" "db_user" {
   name     = var.db_user
   instance = google_sql_database_instance.my_db_instance.name
   password = random_password.db_password.result
+  depends_on = [google_sql_database_instance.my_db_instance]
 }
 
 
