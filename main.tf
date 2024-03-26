@@ -188,7 +188,6 @@ resource "google_dns_record_set" "a_record" {
   rrdatas      = [google_compute_instance.my_vm_instance.network_interface[0].access_config[0].nat_ip]
 }
 
-# Create Service Account
 resource "google_service_account" "vm_service_account" {
   account_id   = var.sa_account_id
   display_name = var.sa_display_name
@@ -212,3 +211,126 @@ resource "google_project_iam_binding" "monitoring_metric_writer_binding" {
     "serviceAccount:${google_service_account.vm_service_account.email}"
   ]
 }
+
+resource "google_project_iam_binding" "pubsub_editor_binding" {
+  project = var.project_id
+  role    = "roles/pubsub.editor"
+
+  members = [
+    "serviceAccount:${google_service_account.vm_service_account.email}"
+  ]
+}
+
+
+###################################################
+
+resource "google_pubsub_topic" "my_topic" {
+  name = "verify_email"
+}
+
+resource "google_pubsub_subscription" "my_subscription" {
+  name                       = "verify_email_subscription"
+  topic                      = google_pubsub_topic.my_topic.id
+  ack_deadline_seconds       = 180
+  message_retention_duration = "604800s"
+  depends_on                 = [google_cloudfunctions2_function.my_cloud_function2] # give cloud function here
+
+  push_config {
+    push_endpoint = "https://us-east1-csye6225-414009.cloudfunctions.net/verify_email_cloud_function"
+    #push_endpoint = google_cloudfunctions2_function.my_cloud_function2.service_config[0].uri
+  }
+  retry_policy {
+    minimum_backoff = "10s"
+    maximum_backoff = "600s"
+  }
+}
+
+resource "google_cloudfunctions2_function" "my_cloud_function2" {
+  name        = "verify_email_cloud_function"
+  location    = "us-east1"
+  description = "a new function to send a email verification link"
+  depends_on  = [google_vpc_access_connector.serverless_vpc_connector]
+
+  build_config {
+    runtime     = "java17"
+    entry_point = "gcfv2pubsub.PubSubFunction" # Set the entry point
+    source {
+      storage_source {
+        bucket = "csye-storage-bucket-cf"
+        object = "email-cloud-function.zip"
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count = 1
+    min_instance_count = 0
+    available_memory   = "256M"
+    available_cpu      = 1
+    timeout_seconds    = 60
+    environment_variables = {
+      PRIVATE_API_KEY = "21501e2151e6cee97b08ace6842ab175-309b0ef4-d38d7c83"
+      DOMAIN          = "mail.sharankumar.me"
+    }
+    ingress_settings               = "ALLOW_ALL"
+    all_traffic_on_latest_revision = true
+    vpc_connector                  = google_vpc_access_connector.serverless_vpc_connector.name
+    service_account_email          = google_service_account.cloud_function_service_account.email
+
+  }
+
+  event_trigger {
+    trigger_region = "us-central1"
+    event_type     = "google.cloud.pubsub.topic.v1.messagePublished"
+    pubsub_topic   = google_pubsub_topic.my_topic.id
+    retry_policy   = "RETRY_POLICY_RETRY"
+  }
+}
+
+resource "google_service_account" "cloud_function_service_account" {
+  account_id   = "cf-service-account"
+  display_name = "Cloud Function service account"
+}
+
+resource "google_project_iam_binding" "pubsub_token_creator" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountTokenCreator"
+
+  members = [
+    "serviceAccount:${google_service_account.cloud_function_service_account.email}"
+  ]
+}
+
+resource "google_project_iam_binding" "cloud_function_invoker" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+
+  members = [
+    "serviceAccount:${google_service_account.cloud_function_service_account.email}"
+  ]
+}
+
+resource "google_project_iam_binding" "cloud_sql_client" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+
+  members = [
+    "serviceAccount:${google_service_account.cloud_function_service_account.email}",
+  ]
+}
+
+resource "google_vpc_access_connector" "serverless_vpc_connector" {
+  name          = "new-vpc-connector"
+  region        = var.region
+  ip_cidr_range = "10.10.0.0/28"
+  network       = google_compute_network.my_vpc.self_link
+  project       = var.project_id
+}
+
+output "sql_password" {
+  value     = random_password.db_password.result
+  sensitive = true
+}
+
+
+
