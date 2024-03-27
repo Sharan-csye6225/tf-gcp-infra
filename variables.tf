@@ -443,7 +443,7 @@ variable "my_cloud_function2_ingress_settings" {
   type        = string
 }
 
-variable "my_cloud_function2_all_trafficon_latest_revision" {
+variable "my_cloud_function2_all_traffic_on_latest_revision" {
   description = "Enable traffic on the latest revision for the Cloud Function"
   type        = bool
 }

@@ -172,8 +172,8 @@ resource "google_compute_instance" "my_vm_instance" {
     echo "MYSQL_DB_HOST=${google_sql_database_instance.my_db_instance.private_ip_address}" >> .env
     echo "MYSQL_DB_PORT=${var.cloudSQL_port}" >> .env
     echo "LOG_FILE_PATH=${var.log_File_Path}" >> .env
-    echo "GCP_PUBSUB_TOPIC_NAME:  ${google_pubsub_topic.my_topic.name}" >> .env
-    echo "GCP_PROJECT_ID:  ${var.project_id}" >> .env
+    echo "GCP_PUBSUB_TOPIC_NAME=${google_pubsub_topic.my_topic.name}" >> .env
+    echo "GCP_PROJECT_ID=${var.project_id}" >> .env
     EOF
   }
 }
@@ -277,7 +277,7 @@ resource "google_cloudfunctions2_function" "my_cloud_function2" {
       TABLE_NAME      = var.my_cloud_function2_service_config_TABLE_NAME
     }
     ingress_settings               = var.my_cloud_function2_ingress_settings
-    all_traffic_on_latest_revision = var.my_cloud_function2_all_trafficon_latest_revision
+    all_traffic_on_latest_revision = var.my_cloud_function2_all_traffic_on_latest_revision
     vpc_connector                  = google_vpc_access_connector.serverless_vpc_connector.name
     service_account_email          = google_service_account.cloud_function_service_account.email
 
