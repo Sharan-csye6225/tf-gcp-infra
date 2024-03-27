@@ -172,6 +172,8 @@ resource "google_compute_instance" "my_vm_instance" {
     echo "MYSQL_DB_HOST=${google_sql_database_instance.my_db_instance.private_ip_address}" >> .env
     echo "MYSQL_DB_PORT=${var.cloudSQL_port}" >> .env
     echo "LOG_FILE_PATH=${var.log_File_Path}" >> .env
+    echo "GCP_PUBSUB_TOPIC_NAME:  ${google_pubsub_topic.my_topic.name}" >> .env
+    echo "GCP_PROJECT_ID:  ${var.project_id}" >> .env
     EOF
   }
 }
@@ -212,89 +214,91 @@ resource "google_project_iam_binding" "monitoring_metric_writer_binding" {
   ]
 }
 
-resource "google_project_iam_binding" "pubsub_editor_binding" {
+resource "google_pubsub_topic_iam_binding" "pubsub_pulisher_binding" {
   project = var.project_id
-  role    = "roles/pubsub.editor"
-
+  role    = var.pubsub_pulisher_binding_role
+  topic   = google_pubsub_topic.my_topic.name
   members = [
     "serviceAccount:${google_service_account.vm_service_account.email}"
   ]
 }
 
-
-###################################################
-
 resource "google_pubsub_topic" "my_topic" {
-  name = "verify_email"
+  name                       = var.topic_name
+  message_retention_duration = var.topic_message_retention_duration
 }
 
 resource "google_pubsub_subscription" "my_subscription" {
-  name                       = "verify_email_subscription"
+  name                       = var.subscription_name
   topic                      = google_pubsub_topic.my_topic.id
-  ack_deadline_seconds       = 180
-  message_retention_duration = "604800s"
+  ack_deadline_seconds       = var.subscription_ack_deadline_seconds
+  message_retention_duration = var.subscription_message_retention_duration
   depends_on                 = [google_cloudfunctions2_function.my_cloud_function2] # give cloud function here
 
   push_config {
-    push_endpoint = "https://us-east1-csye6225-414009.cloudfunctions.net/verify_email_cloud_function"
-    #push_endpoint = google_cloudfunctions2_function.my_cloud_function2.service_config[0].uri
+    push_endpoint = "https://${var.region}-${var.project_id}.cloudfunctions.net/${var.subscription_name}"
   }
   retry_policy {
-    minimum_backoff = "10s"
-    maximum_backoff = "600s"
+    minimum_backoff = var.subscription_retry_policy_minimum_backoff
+    maximum_backoff = var.subscription_retry_policy_maximum_backoff
   }
 }
 
 resource "google_cloudfunctions2_function" "my_cloud_function2" {
-  name        = "verify_email_cloud_function"
-  location    = "us-east1"
-  description = "a new function to send a email verification link"
+  name        = var.my_cloud_function2_name
+  location    = var.region
+  description = var.my_cloud_function2_description
   depends_on  = [google_vpc_access_connector.serverless_vpc_connector]
 
   build_config {
-    runtime     = "java17"
-    entry_point = "gcfv2pubsub.PubSubFunction" # Set the entry point
+    runtime     = var.my_cloud_function2_build_config_runtime
+    entry_point = var.my_cloud_function2_build_config_entry_point
     source {
       storage_source {
-        bucket = "csye-storage-bucket-cf"
-        object = "email-cloud-function.zip"
+        bucket = var.my_cloud_function2_storage_source_bucket
+        object = var.my_cloud_function2_storage_source_object
       }
     }
   }
 
   service_config {
-    max_instance_count = 1
-    min_instance_count = 0
-    available_memory   = "256M"
-    available_cpu      = 1
-    timeout_seconds    = 60
+    max_instance_count = var.my_cloud_function2_service_config_max_instance_count
+    min_instance_count = var.my_cloud_function2_service_config_min_instance_count
+    available_memory   = var.my_cloud_function2_service_config_available_memory
+    available_cpu      = var.my_cloud_function2_service_config_available_cpu
+    timeout_seconds    = var.my_cloud_function2_service_config_timeout_seconds
     environment_variables = {
-      PRIVATE_API_KEY = "21501e2151e6cee97b08ace6842ab175-309b0ef4-d38d7c83"
-      DOMAIN          = "mail.sharankumar.me"
+      PRIVATE_API_KEY = var.my_cloud_function2_service_config_PRIVATE_API_KEY
+      DOMAIN          = var.my_cloud_function2_service_config_DOMAIN
+      SUB_DOMAIN      = var.my_cloud_function2_service_config_SUB_DOMAIN
+      DATABASE_URL    = "jdbc:mysql://${google_sql_database_instance.my_db_instance.private_ip_address}:${var.cloudSQL_port}/${var.db_name}?createDatabaseIfNotExist=true"
+      DB_USER         = google_sql_user.db_user.name
+      DB_PASSWORD     = random_password.db_password.result
+      TABLE_NAME      = var.my_cloud_function2_service_config_TABLE_NAME
     }
-    ingress_settings               = "ALLOW_ALL"
-    all_traffic_on_latest_revision = true
+    ingress_settings               = var.my_cloud_function2_ingress_settings
+    all_traffic_on_latest_revision = var.my_cloud_function2_all_trafficon_latest_revision
     vpc_connector                  = google_vpc_access_connector.serverless_vpc_connector.name
     service_account_email          = google_service_account.cloud_function_service_account.email
 
   }
 
   event_trigger {
-    trigger_region = "us-central1"
-    event_type     = "google.cloud.pubsub.topic.v1.messagePublished"
+    trigger_region = var.region
+    event_type     = var.my_cloud_function2_event_trigger_event_type
     pubsub_topic   = google_pubsub_topic.my_topic.id
-    retry_policy   = "RETRY_POLICY_RETRY"
+    retry_policy   = var.my_cloud_function2_event_trigger_retry_policy
   }
 }
 
 resource "google_service_account" "cloud_function_service_account" {
-  account_id   = "cf-service-account"
-  display_name = "Cloud Function service account"
+  account_id   = var.cloud_function_service_account_account_id
+  display_name = var.cloud_function_service_account_display_name
 }
 
 resource "google_project_iam_binding" "pubsub_token_creator" {
   project = var.project_id
-  role    = "roles/iam.serviceAccountTokenCreator"
+  role    = var.pubsub_token_creator_iam_binding_role
 
   members = [
     "serviceAccount:${google_service_account.cloud_function_service_account.email}"
@@ -303,8 +307,7 @@ resource "google_project_iam_binding" "pubsub_token_creator" {
 
 resource "google_project_iam_binding" "cloud_function_invoker" {
   project = var.project_id
-  role    = "roles/run.invoker"
-
+  role    = var.cloud_function_invoker_iam_binding_role
   members = [
     "serviceAccount:${google_service_account.cloud_function_service_account.email}"
   ]
@@ -312,7 +315,7 @@ resource "google_project_iam_binding" "cloud_function_invoker" {
 
 resource "google_project_iam_binding" "cloud_sql_client" {
   project = var.project_id
-  role    = "roles/cloudsql.client"
+  role    = var.cloud_sql_client_iam_binding_role
 
   members = [
     "serviceAccount:${google_service_account.cloud_function_service_account.email}",
@@ -320,17 +323,14 @@ resource "google_project_iam_binding" "cloud_sql_client" {
 }
 
 resource "google_vpc_access_connector" "serverless_vpc_connector" {
-  name          = "new-vpc-connector"
+  name          = var.serverless_vpc_connector_name
   region        = var.region
-  ip_cidr_range = "10.10.0.0/28"
+  ip_cidr_range = var.serverless_vpc_connector_ip_cidr_range
   network       = google_compute_network.my_vpc.self_link
   project       = var.project_id
 }
 
-output "sql_password" {
-  value     = random_password.db_password.result
-  sensitive = true
-}
+
 
 
 
