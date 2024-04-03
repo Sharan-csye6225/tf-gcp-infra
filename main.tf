@@ -383,7 +383,7 @@ resource "google_compute_region_instance_group_manager" "my_instance_group_manag
 
   auto_healing_policies {
     health_check      = google_compute_health_check.my_http_health_check.id
-    initial_delay_sec = 300
+    initial_delay_sec = var.my_instance_group_manager_auto_healing_policies_initial_delay_sec
   }
 
 }
@@ -411,26 +411,26 @@ resource "google_compute_global_address" "lb_global_address" {
 }
 
 resource "google_compute_backend_service" "lb_backend_service" {
-  name                            = "lb-backend-service"
-  connection_draining_timeout_sec = 300
+  name                            = var.lb_backend_service_name
+  connection_draining_timeout_sec = var.lb_backend_service_connection_draining_timeout_sec
   health_checks                   = [google_compute_health_check.my_http_health_check.id]
-  load_balancing_scheme           = "EXTERNAL"
-  port_name                       = "http"
-  protocol                        = "HTTP"
-  session_affinity                = "NONE"
-  timeout_sec                     = 30
-  enable_cdn                      = false
+  load_balancing_scheme           = var.lb_backend_service_load_balancing_scheme
+  port_name                       = var.lb_backend_service_port_name
+  protocol                        = var.lb_backend_service_protocol
+  session_affinity                = var.lb_backend_service_session_affinity
+  timeout_sec                     = var.lb_backend_service_timeout_sec
+  enable_cdn                      = var.lb_backend_service_enable_cdn
   depends_on                      = [google_compute_region_instance_group_manager.my_instance_group_manager, google_compute_health_check.my_http_health_check]
 
   backend {
     group           = google_compute_region_instance_group_manager.my_instance_group_manager.instance_group
-    balancing_mode  = "UTILIZATION"
-    capacity_scaler = 1.0
+    balancing_mode  = var.lb_backend_service_backend_balancing_mode
+    capacity_scaler = var.lb_backend_service_capacity_scaler
   }
 
   log_config {
-    enable      = true
-    sample_rate = 1.0
+    enable      = var.lb_backend_service_log_config_enable
+    sample_rate = var.lb_backend_service_log_config_sample_rate
   }
 
 }
@@ -452,7 +452,7 @@ resource "google_compute_managed_ssl_certificate" "lb_managed_ssl_certificate" {
   name = var.lb_managed_ssl_certificate_name
 
   managed {
-    domains = ["sharankumar.me"]
+    domains = var.lb_managed_ssl_certificate_managed_domains
   }
 }
 
