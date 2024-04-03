@@ -53,6 +53,7 @@ resource "google_compute_firewall" "firewall_allow" {
   name        = var.firewall_allow_name
   network     = google_compute_network.my_vpc.self_link
   description = var.firewall_description
+  depends_on  = [google_compute_global_address.lb_global_address]
 
   allow {
     protocol = var.firewall_allow_protocol
@@ -60,7 +61,23 @@ resource "google_compute_firewall" "firewall_allow" {
   }
 
   priority      = var.firewall_allow_priority
-  source_ranges = var.source_ranges
+  source_ranges = [google_compute_global_address.lb_global_address.address]
+  target_tags   = var.target_tags
+}
+
+resource "google_compute_firewall" "firewall_for_health_check" {
+  name        = var.firewall_for_health_check_name
+  network     = google_compute_network.my_vpc.self_link
+  description = var.firewall_for_health_check_description
+  direction   = var.firewall_for_health_check_direction
+
+  allow {
+    protocol = var.firewall_for_health_check_protocol
+    ports    = var.firewall_for_health_check_ports
+  }
+
+  priority      = var.firewall_for_health_check_priority
+  source_ranges = var.firewall_for_health_check_source_ranges
   target_tags   = var.target_tags
 }
 
@@ -131,63 +148,12 @@ output "cloud_sql_internal_ip" {
   value = google_sql_database_instance.my_db_instance.private_ip_address
 }
 
-# Create GCP Compute Engine Instance
-resource "google_compute_instance" "my_vm_instance" {
-  name         = var.vm_name
-  machine_type = var.machine_type
-  zone         = var.zone
-  tags         = var.tags
-  depends_on   = [google_service_account.vm_service_account]
-
-  network_interface {
-    subnetwork = google_compute_subnetwork.subnet["webapp"].self_link
-    network    = google_compute_network.my_vpc.self_link
-    access_config { #Generates a external IP address
-      nat_ip       = var.access_config_nat_ip
-      network_tier = var.access_config_network_tier
-    }
-  }
-
-  boot_disk {
-    auto_delete = var.boot_disk_auto_delete
-    initialize_params {
-      image = var.custom_image_name
-      size  = var.boot_disk_size
-      type  = var.boot_disk_type
-    }
-  }
-
-  service_account {
-    email  = google_service_account.vm_service_account.email
-    scopes = var.service_account_scope
-  }
-
-  metadata = {
-    startup-script = <<-EOF
-    echo "Startup script"
-    cd /opt/cloud
-    echo "MYSQL_DB_USERNAME=${google_sql_user.db_user.name}" >> .env
-    echo "MYSQL_DB_PASSWORD=${random_password.db_password.result}" >> .env
-    echo "MYSQL_DB_DATABASE=${google_sql_database.db.name}" >> .env
-    echo "MYSQL_DB_HOST=${google_sql_database_instance.my_db_instance.private_ip_address}" >> .env
-    echo "MYSQL_DB_PORT=${var.cloudSQL_port}" >> .env
-    echo "LOG_FILE_PATH=${var.log_File_Path}" >> .env
-    echo "GCP_PUBSUB_TOPIC_NAME=${google_pubsub_topic.my_topic.name}" >> .env
-    echo "GCP_PROJECT_ID=${var.project_id}" >> .env
-    EOF
-  }
-}
-
-output "my_vm_instance_public_ip_address" {
-  value = google_compute_instance.my_vm_instance.network_interface.0.access_config.0.nat_ip
-}
-
 resource "google_dns_record_set" "a_record" {
   name         = var.domain_name
   type         = var.a_record_type
   ttl          = var.a_record_ttl
   managed_zone = var.a_record_managed_zone
-  rrdatas      = [google_compute_instance.my_vm_instance.network_interface[0].access_config[0].nat_ip]
+  rrdatas      = [google_compute_global_address.lb_global_address.address]
 }
 
 resource "google_service_account" "vm_service_account" {
@@ -330,3 +296,177 @@ resource "google_vpc_access_connector" "serverless_vpc_connector" {
   network       = google_compute_network.my_vpc.self_link
   project       = var.project_id
 }
+
+resource "google_compute_region_instance_template" "my_vm_instance_template" {
+  name         = var.my_vm_instance_template_name
+  description  = var.my_vm_instance_template_description
+  region       = var.region
+  machine_type = var.machine_type
+  tags         = var.tags
+  depends_on   = [google_service_account.vm_service_account]
+
+  labels = {
+    environment = var.labels_environment
+  }
+
+  // Create a new boot disk from an image
+  disk {
+    source_image = var.custom_image_name
+    auto_delete  = var.boot_disk_auto_delete
+    boot         = var.my_vm_instance_template_boot
+    disk_type    = var.boot_disk_type
+    disk_size_gb = var.boot_disk_size
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.subnet["webapp"].self_link
+    network    = google_compute_network.my_vpc.self_link
+    access_config {
+      nat_ip       = var.access_config_nat_ip
+      network_tier = var.access_config_network_tier
+    }
+  }
+
+  service_account {
+    email  = google_service_account.vm_service_account.email
+    scopes = var.service_account_scope
+  }
+
+  metadata = {
+    startup-script = <<-EOF
+    echo "Startup script"
+    cd /opt/cloud
+    echo "MYSQL_DB_USERNAME=${google_sql_user.db_user.name}" >> .env
+    echo "MYSQL_DB_PASSWORD=${random_password.db_password.result}" >> .env
+    echo "MYSQL_DB_DATABASE=${google_sql_database.db.name}" >> .env
+    echo "MYSQL_DB_HOST=${google_sql_database_instance.my_db_instance.private_ip_address}" >> .env
+    echo "MYSQL_DB_PORT=${var.cloudSQL_port}" >> .env
+    echo "LOG_FILE_PATH=${var.log_File_Path}" >> .env
+    echo "GCP_PUBSUB_TOPIC_NAME=${google_pubsub_topic.my_topic.name}" >> .env
+    echo "GCP_PROJECT_ID=${var.project_id}" >> .env
+    EOF
+  }
+}
+
+resource "google_compute_health_check" "my_http_health_check" {
+  name                = var.my_http_health_check_name
+  description         = var.my_http_health_check_description
+  timeout_sec         = var.my_http_health_check_timeout_sec
+  check_interval_sec  = var.my_http_health_check_check_interval_sec
+  healthy_threshold   = var.my_http_health_check_healthy_threshold
+  unhealthy_threshold = var.my_http_health_check_unhealthy_threshold
+
+  http_health_check {
+    port               = var.http_health_check_port
+    port_specification = var.http_health_check_port_specification
+    request_path       = var.http_health_check_request_path
+    proxy_header       = var.http_health_check_proxy_header
+  }
+}
+
+resource "google_compute_region_instance_group_manager" "my_instance_group_manager" {
+  name                             = var.my_instance_group_manager_name
+  base_instance_name               = var.vm_name
+  region                           = var.region
+  distribution_policy_zones        = var.my_instance_group_manager_distribution_policy_zones
+  distribution_policy_target_shape = var.my_instance_group_manager_distribution_policy_target_shape
+  depends_on                       = [google_compute_region_instance_template.my_vm_instance_template]
+
+  version {
+    instance_template = google_compute_region_instance_template.my_vm_instance_template.self_link
+  }
+
+  named_port {
+    name = var.my_instance_group_manager_named_port_name
+    port = var.my_instance_group_manager_named_port_port
+  }
+
+  auto_healing_policies {
+    health_check      = google_compute_health_check.my_http_health_check.id
+    initial_delay_sec = 300
+  }
+
+}
+
+resource "google_compute_region_autoscaler" "my_autoscaler" {
+  name       = var.my_autoscaler_name
+  region     = var.region
+  target     = google_compute_region_instance_group_manager.my_instance_group_manager.id
+  depends_on = [google_compute_region_instance_group_manager.my_instance_group_manager]
+
+  autoscaling_policy {
+    min_replicas    = var.my_autoscaler_autoscaling_policy_min_replicas
+    max_replicas    = var.my_autoscaler_autoscaling_policy_max_replicas
+    cooldown_period = var.my_autoscaler_autoscaling_policy_cooldown_period
+
+    cpu_utilization {
+      target = var.my_autoscaler_cpu_utilization_target
+    }
+  }
+}
+
+resource "google_compute_global_address" "lb_global_address" {
+  name       = var.lb_global_address_name
+  ip_version = var.lb_global_address_ip_version
+}
+
+resource "google_compute_backend_service" "lb_backend_service" {
+  name                            = "lb-backend-service"
+  connection_draining_timeout_sec = 300
+  health_checks                   = [google_compute_health_check.my_http_health_check.id]
+  load_balancing_scheme           = "EXTERNAL"
+  port_name                       = "http"
+  protocol                        = "HTTP"
+  session_affinity                = "NONE"
+  timeout_sec                     = 30
+  enable_cdn                      = false
+  depends_on                      = [google_compute_region_instance_group_manager.my_instance_group_manager, google_compute_health_check.my_http_health_check]
+
+  backend {
+    group           = google_compute_region_instance_group_manager.my_instance_group_manager.instance_group
+    balancing_mode  = "UTILIZATION"
+    capacity_scaler = 1.0
+  }
+
+  log_config {
+    enable      = true
+    sample_rate = 1.0
+  }
+
+}
+
+resource "google_compute_url_map" "lb_url_map" {
+  name            = var.lb_url_map_name
+  default_service = google_compute_backend_service.lb_backend_service.id
+  depends_on      = [google_compute_backend_service.lb_backend_service]
+}
+
+resource "google_compute_target_https_proxy" "lb_target_https_proxy" {
+  name             = var.lb_target_https_proxy_name
+  url_map          = google_compute_url_map.lb_url_map.id
+  ssl_certificates = [google_compute_managed_ssl_certificate.lb_managed_ssl_certificate.id]
+  depends_on       = [google_compute_url_map.lb_url_map]
+}
+
+resource "google_compute_managed_ssl_certificate" "lb_managed_ssl_certificate" {
+  name = var.lb_managed_ssl_certificate_name
+
+  managed {
+    domains = ["sharankumar.me"]
+  }
+}
+
+resource "google_compute_global_forwarding_rule" "default" {
+  name                  = var.lb_global_forwarding_rule_name
+  ip_protocol           = var.lb_global_forwarding_rule_ip_protocol
+  load_balancing_scheme = var.lb_global_forwarding_rule_load_balancing_scheme
+  port_range            = var.lb_global_forwarding_rule_port_range
+  target                = google_compute_target_https_proxy.lb_target_https_proxy.id
+  ip_address            = google_compute_global_address.lb_global_address.address
+  depends_on            = [google_compute_target_https_proxy.lb_target_https_proxy, google_compute_global_address.lb_global_address]
+}
+
+output "loadbalancer_external_ip" {
+  value = google_compute_global_address.lb_global_address.address
+}
+

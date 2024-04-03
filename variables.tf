@@ -493,4 +493,280 @@ variable "serverless_vpc_connector_ip_cidr_range" {
   type        = string
 }
 
+variable "firewall_for_health_check_name" {
+  type        = string
+  description = "Name for the firewall rule for health check"
+}
+
+variable "firewall_for_health_check_description" {
+  type        = string
+  description = "Description for the firewall rule for health check"
+}
+
+variable "firewall_for_health_check_direction" {
+  type        = string
+  description = "Direction for the firewall rule for health check"
+}
+
+variable "firewall_for_health_check_protocol" {
+  type        = string
+  description = "Protocol for the firewall rule for health check"
+}
+
+variable "firewall_for_health_check_ports" {
+  type        = list(number)
+  description = "Ports for the firewall rule for health check"
+}
+
+variable "firewall_for_health_check_priority" {
+  type        = number
+  description = "Priority for the firewall rule for health check"
+}
+
+variable "firewall_for_health_check_source_ranges" {
+  type        = list(string)
+  description = "Source ranges for the firewall rule for health check"
+}
+
+variable "firewall_for_health_check_target_tags" {
+  type        = list(string)
+  description = "Target tags for the firewall rule for health check"
+}
+
+variable "my_vm_instance_template_name" {
+  type        = string
+  description = "Name for the VM instance template"
+}
+
+variable "my_vm_instance_template_description" {
+  type        = string
+  description = "Description for the VM instance template"
+}
+
+variable "my_http_health_check_name" {
+  type        = string
+  description = "Name for the HTTP health check"
+}
+
+variable "my_http_health_check_description" {
+  type        = string
+  description = "Description for the HTTP health check"
+}
+
+variable "http_health_check_port" {
+  type        = number
+  description = "Port for the HTTP health check"
+}
+
+variable "http_health_check_port_specification" {
+  type        = string
+  description = "Port specification for the HTTP health check"
+}
+
+variable "http_health_check_request_path" {
+  type        = string
+  description = "Request path for the HTTP health check"
+}
+
+variable "http_health_check_proxy_header" {
+  type        = string
+  description = "Proxy header for the HTTP health check"
+}
+
+variable "my_instance_group_manager_name" {
+  type        = string
+  description = "Name for the instance group manager"
+}
+
+variable "my_instance_group_manager_distribution_policy_zones" {
+  type        = list(string)
+  description = "Zones for the instance group manager distribution policy"
+}
+
+variable "my_instance_group_manager_distribution_policy_target_shape" {
+  type        = string
+  description = "Target shape for the instance group manager distribution policy"
+}
+
+variable "my_instance_group_manager_named_port_name" {
+  type        = string
+  description = "Named port name for the instance group manager"
+}
+
+variable "my_instance_group_manager_named_port_port" {
+  type        = number
+  description = "Named port port for the instance group manager"
+}
+
+variable "my_autoscaler_name" {
+  type        = string
+  description = "Name for the autoscaler"
+}
+
+variable "lb_global_address_name" {
+  type        = string
+  description = "Name for the global address"
+}
+
+variable "lb_global_address_ip_version" {
+  type        = string
+  description = "IP version for the global address"
+}
+
+variable "lb_backend_service_name" {
+  type        = string
+  description = "Name for the backend service"
+}
+
+variable "lb_backend_service_load_balancing_scheme" {
+  type        = string
+  description = "Load balancing scheme for the backend service"
+}
+
+variable "lb_backend_service_port_name" {
+  type        = string
+  description = "Port name for the backend service"
+}
+
+variable "lb_backend_service_protocol" {
+  type        = string
+  description = "Protocol for the backend service"
+}
+
+variable "lb_backend_service_session_affinity" {
+  type        = string
+  description = "Session affinity for the backend service"
+}
+
+variable "lb_backend_service_timeout_sec" {
+  type        = number
+  description = "Timeout in seconds for the backend service"
+}
+
+variable "lb_backend_service_enable_cdn" {
+  type        = bool
+  description = "Enable CDN for the backend service"
+}
+
+variable "lb_backend_service_backend_balancing_mode" {
+  type        = string
+  description = "Backend balancing mode for the backend service"
+}
+
+variable "lb_backend_service_capacity_scaler" {
+  type        = number
+  description = "Capacity scaler for the backend service"
+}
+
+variable "lb_backend_service_log_config_enable" {
+  type        = bool
+  description = "Enable logging for the backend service"
+}
+
+variable "lb_backend_service_log_config_sample_rate" {
+  type        = number
+  description = "Log sample rate for the backend service"
+}
+
+variable "my_instance_group_manager_auto_healing_policies_initial_delay_sec" {
+  type        = number
+  description = "Initial delay in seconds for auto healing policies of the instance group manager"
+}
+
+variable "labels_environment" {
+  type        = string
+  description = "Environment label"
+}
+
+variable "my_vm_instance_template_boot" {
+  type        = bool
+  description = "Boot configuration for VM instance template"
+}
+
+variable "my_http_health_check_timeout_sec" {
+  type        = number
+  description = "Timeout in seconds for the HTTP health check"
+}
+
+variable "my_http_health_check_check_interval_sec" {
+  type        = number
+  description = "Check interval in seconds for the HTTP health check"
+}
+
+variable "my_http_health_check_healthy_threshold" {
+  type        = number
+  description = "Healthy threshold for the HTTP health check"
+}
+
+variable "my_http_health_check_unhealthy_threshold" {
+  type        = number
+  description = "Unhealthy threshold for the HTTP health check"
+}
+
+variable "my_autoscaler_autoscaling_policy_min_replicas" {
+  type        = number
+  description = "Minimum replicas for the autoscaling policy"
+}
+
+variable "my_autoscaler_autoscaling_policy_max_replicas" {
+  type        = number
+  description = "Maximum replicas for the autoscaling policy"
+}
+
+variable "my_autoscaler_autoscaling_policy_cooldown_period" {
+  type        = number
+  description = "Cooldown period in seconds for the autoscaling policy"
+}
+
+variable "my_autoscaler_cpu_utilization_target" {
+  type        = number
+  description = "CPU utilization target for the autoscaler"
+}
+
+variable "lb_backend_service_connection_draining_timeout_sec" {
+  type        = number
+  description = "Connection draining timeout in seconds for the backend service"
+}
+
+variable "lb_url_map_name" {
+  type        = string
+  description = "Name for the URL map"
+}
+
+variable "lb_target_https_proxy_name" {
+  type        = string
+  description = "Name for the target HTTPS proxy"
+}
+
+variable "lb_managed_ssl_certificate_name" {
+  type        = string
+  description = "Name for the managed SSL certificate"
+}
+
+variable "lb_managed_ssl_certificate_managed_domains" {
+  type        = list(string)
+  description = "Domains for the managed SSL certificate"
+}
+
+variable "lb_global_forwarding_rule_name" {
+  type        = string
+  description = "Name for the global forwarding rule"
+}
+
+variable "lb_global_forwarding_rule_ip_protocol" {
+  type        = string
+  description = "IP protocol for the global forwarding rule"
+}
+
+variable "lb_global_forwarding_rule_load_balancing_scheme" {
+  type        = string
+  description = "Load balancing scheme for the global forwarding rule"
+}
+
+variable "lb_global_forwarding_rule_port_range" {
+  type        = string
+  description = "Port range for the global forwarding rule"
+}
+
+
 
