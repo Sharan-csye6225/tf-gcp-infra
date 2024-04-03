@@ -244,6 +244,7 @@ resource "google_pubsub_subscription" "my_subscription" {
   }
 }
 
+
 resource "google_cloudfunctions2_function" "my_cloud_function2" {
   name        = var.my_cloud_function2_name
   location    = var.region
@@ -329,8 +330,3 @@ resource "google_vpc_access_connector" "serverless_vpc_connector" {
   network       = google_compute_network.my_vpc.self_link
   project       = var.project_id
 }
-
-
-
-
-
