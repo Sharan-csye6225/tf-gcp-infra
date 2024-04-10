@@ -504,7 +504,7 @@ output "loadbalancer_external_ip" {
 
 # Create a key ring
 resource "google_kms_key_ring" "my_key_ring" {
-  name     = "${var.my_key_ring_name}-${random_id.key_ring_name_suffix.hex}"
+  name     = var.my_key_ring_name
   location = var.region
 }
 
