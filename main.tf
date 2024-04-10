@@ -515,7 +515,7 @@ resource "google_kms_crypto_key" "vm_crypto_key" {
   rotation_period = var.crypto_key_rotation_period
   purpose         = var.crypto_key_purpose
   lifecycle {
-    prevent_destroy = var.lifecycle_prevent_destroy
+    prevent_destroy = false
   }
 }
 
@@ -525,7 +525,7 @@ resource "google_kms_crypto_key" "cloud_sql_crypto_key" {
   rotation_period = var.crypto_key_rotation_period
   purpose         = var.crypto_key_purpose
   lifecycle {
-    prevent_destroy = var.lifecycle_prevent_destroy
+    prevent_destroy = false
   }
 }
 
@@ -535,7 +535,7 @@ resource "google_kms_crypto_key" "cloud_storage_crypto_key" {
   rotation_period = var.crypto_key_rotation_period
   purpose         = var.crypto_key_purpose
   lifecycle {
-    prevent_destroy = var.lifecycle_prevent_destroy
+    prevent_destroy = false
   }
 }
 
