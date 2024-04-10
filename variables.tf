@@ -768,5 +768,91 @@ variable "lb_global_forwarding_rule_port_range" {
   description = "Port range for the global forwarding rule"
 }
 
+variable "key_ring_name_suffix_byte_length" {
+  type        = number
+  description = "Suffix byte length for the key ring name"
+}
+
+variable "cloud_storage_bucket_name" {
+  type        = string
+  description = "Name of the cloud storage bucket"
+}
+
+variable "cloud_storage_bucket_force_destroy" {
+  type        = bool
+  description = "Whether to force destroy the cloud storage bucket"
+}
+
+variable "cloud_storage_bucket_public_access_prevention" {
+  type        = string
+  description = "Prevention mode for public access to the cloud storage bucket"
+}
+
+variable "cloud_storage_bucket_object_name" {
+  type        = string
+  description = "Name of the cloud storage bucket object"
+}
+
+variable "cloud_storage_bucket_object_source" {
+  type        = string
+  description = "Source of the cloud storage bucket object"
+}
+
+variable "storage_bucket_iam_binding_role" {
+  type        = string
+  description = "IAM role binding for the storage bucket"
+}
+
+variable "my_key_ring_name" {
+  type        = string
+  description = "Name of the key ring"
+}
+
+variable "vm_crypto_key_name" {
+  type        = string
+  description = "Name of the VM crypto key"
+}
+
+variable "crypto_key_rotation_period" {
+  type        = string
+  description = "Rotation period for the crypto key"
+}
+
+variable "crypto_key_purpose" {
+  type        = string
+  description = "Purpose of the crypto key"
+}
+
+variable "lifecycle_prevent_destroy" {
+  type        = bool
+  description = "Whether to prevent destruction during the lifecycle"
+}
+
+variable "cloud_sql_crypto_key_name" {
+  type        = string
+  description = "Name of the Cloud SQL crypto key"
+}
+
+variable "cloud_storage_crypto_key_name" {
+  type        = string
+  description = "Name of the Cloud Storage crypto key"
+}
+
+variable "gcp_sa_cloud_sql_service" {
+  type        = string
+  description = "Service for the GCP SA Cloud SQL"
+}
+
+variable "crypto_key_iam_binding_role" {
+  type        = string
+  description = "IAM role binding for the crypto key"
+}
+
+variable "vm_crypto_key_iam_binding_service_account" {
+  type        = string
+  description = "IAM binding for the VM crypto key service account"
+}
+
+
 
 
